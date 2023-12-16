@@ -59,7 +59,7 @@ app.config.update(
     UPLOADED_IMAGE = os.path.join(dir_path, "static\\uploaded_image\\raw\\"),
     CROPED_IMAGE = os.path.join(dir_path, "static\\uploaded_image\\croped\\"),
     MODEL_PATH = os.path.join(dir_path,'model\\slang_app.h5'),
-    DATASET_AUTOCORRECT = os.path.join(dir_path,"controller\\autocorrect_dataset\\talpco_id.txt")
+    DATASET_AUTOCORRECT = os.path.join(dir_path,r"controller/autocorrect_dataset/talpco_id.txt")
 )
 
 
