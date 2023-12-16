@@ -3,7 +3,7 @@ FROM python:3.9.3
 RUN  mkdir -p  /slangtrap-model
 WORKDIR  /slangtrap-model
 
-EXPOSE 8080
+EXPOSE 5000
 ENV HOST 0.0.0.0
 
 RUN pip3 install --no-cache-dir --upgrade pip
