@@ -120,6 +120,9 @@ def delete_image(image_path):
     if os.path.exists(image_full_path):
         os.remove(image_full_path)
 
+@app.route('/')
+def index():
+    return 'Welcome to slangtrap-api!'
 
 @app.route('/logout', methods=['POST'])
 def logout():
