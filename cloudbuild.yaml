@@ -1,0 +1,23 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [ 'build', '-t', 'gcr.io/$PROJECT_ID/slangtrap-model', '-f', 'Dockerfile', '.' ]
+    
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/slangtrap-model']
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud run deploy slangtrap-model \
+          --image gcr.io/$PROJECT_ID/slangtrap-model \
+          --region asia-southeast2 \
+          --platform managed \
+          --allow-unauthenticated
+
+# Store images
+#images:
+ # - 'gcr.io/$PROJECT_ID/slangtrap-model'
+options:
+  logging: CLOUD_LOGGING_ONLY
