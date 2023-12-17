@@ -11,7 +11,7 @@ from .db import db
 
 # Change this to your secret key (it can be anything, it's for extra protection)
 SECRET_KEY = 'keyrahasiakey'
-PROFILE_FOLDER = "static\\profile_pic\\"
+PROFILE_FOLDER = "static/profile_pic/"
 # PROFILE_FOLDER = 'static/profile_pic/'
 IMAGE_FOLDER = 'static/image_history/'
 
@@ -57,10 +57,10 @@ app.config.from_object(__name__)
 Session(app)
 dir_path = os.path.dirname(os.path.realpath(__file__))
 app.config.update(
-    UPLOADED_IMAGE = os.path.join(dir_path, "static\\uploaded_image\\raw\\"),
-    CROPED_IMAGE = os.path.join(dir_path, "static\\uploaded_image\\croped\\"),
-    MODEL_PATH = os.path.join(dir_path,'model\\slang_app.h5'),
-    DATASET_AUTOCORRECT = os.path.join(dir_path,r"controller/autocorrect_dataset/talpco_id.txt"),
+    UPLOADED_IMAGE = os.path.join(dir_path, "static/uploaded_image/raw/"),
+    CROPED_IMAGE = os.path.join(dir_path, "static/uploaded_image/croped/"),
+    MODEL_PATH = os.path.join(dir_path,'model/slang_app.h5'),
+    DATASET_AUTOCORRECT = os.path.join(dir_path,"controller/autocorrect_dataset/talpco_id.txt"),
     PROFILE_FOLDER = os.path.join(dir_path,PROFILE_FOLDER)
 )
 
