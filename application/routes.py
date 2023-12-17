@@ -117,9 +117,12 @@ def admin_token_required(f):
 
 def delete_image(image_path):
     # Delete associated images
-    image_full_path = os.path.join(app.config['IMAGE_FOLDER'], image_path)
-    if os.path.exists(image_full_path):
-        os.remove(image_full_path)
+    raw_image_full_path = os.path.join(app.config['UPLOADED_IMAGE'], image_path)
+    if os.path.exists(raw_image_full_path):
+        os.remove(raw_image_full_path)
+    cropped_image_full_path = os.path.join(app.config['CROPED_IMAGE'], image_path)
+    if os.path.exists(cropped_image_full_path):
+        os.remove(cropped_image_full_path)
 
 @app.route('/')
 def index():
