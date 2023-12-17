@@ -59,5 +59,9 @@ def autocrop(user):
              
                 hand_crop = img_rgb[y1:y2, x1:x2]
                 cv2.waitKey(25)
-                cv2.imwrite(os.path.join(crop_dir, '{}.jpg'.format(counter)),  cv2.cvtColor(hand_crop, cv2.COLOR_RGB2BGR))
+                path_crop=os.path.join(crop_dir, '{}.jpg'.format(counter))
+                # print(path_crop)
+                cv2.imwrite(path_crop,  cv2.cvtColor(hand_crop, cv2.COLOR_RGB2BGR))
+                # cv2.imwrite(os.path.join(crop_dir, '{}.jpg'.format(counter)),  cv2.cvtColor(hand_crop, cv2.COLOR_RGB2BGR))
         counter +=1
+            
