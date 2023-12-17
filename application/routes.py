@@ -3,8 +3,8 @@ from application import app
 from application.controller.upload_image import upload_image_controller
 from application.controller.predict import predict_controller
 from werkzeug.utils import secure_filename
-# import nltk
-# nltk.download('punkt')
+import nltk
+nltk.download('punkt')
 
 import datetime
 from distutils.util import strtobool
