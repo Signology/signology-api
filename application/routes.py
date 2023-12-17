@@ -126,7 +126,7 @@ def delete_image(image_path):
 
 @app.route('/')
 def index():
-    return 'Welcome to slangtrap-api!'
+    return 'Welcome to slangtrap-api!, with CI/CD'
 
 @app.route('/logout', methods=['POST'])
 def logout():
