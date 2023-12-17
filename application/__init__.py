@@ -35,16 +35,16 @@ SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@34.128.82.10
 # Create the engine
 engine = create_engine(SQLALCHEMY_DATABASE_URI)
 
-# # Bind the engine to a session
-# Session = sessionmaker(bind=engine)
+# # # Bind the engine to a session
+# # Session = sessionmaker(bind=engine)
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root@localhost/db_capstone3'
 
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['SECRET_KEY'] = SECRET_KEY
-app.config['PROFILE_FOLDER'] = PROFILE_FOLDER
-app.config['IMAGE_FOLDER'] = IMAGE_FOLDER
+# app.config['PROFILE_FOLDER'] = PROFILE_FOLDER
+# app.config['IMAGE_FOLDER'] = IMAGE_FOLDER
 app.config['EXP_DATE'] = EXP_DATE
 app.config['ORG_DOMAINS'] = ORG_DOMAINS
 app.config['ALLOWED_EXTENSIONS'] = ALLOWED_EXTENSIONS
@@ -60,7 +60,8 @@ app.config.update(
     UPLOADED_IMAGE = os.path.join(dir_path, "static\\uploaded_image\\raw\\"),
     CROPED_IMAGE = os.path.join(dir_path, "static\\uploaded_image\\croped\\"),
     MODEL_PATH = os.path.join(dir_path,'model\\slang_app.h5'),
-    DATASET_AUTOCORRECT = os.path.join(dir_path,r"controller/autocorrect_dataset/talpco_id.txt")
+    DATASET_AUTOCORRECT = os.path.join(dir_path,r"controller/autocorrect_dataset/talpco_id.txt"),
+    PROFILE_FOLDER = os.path.join(dir_path,PROFILE_FOLDER)
 )
 
 
