@@ -158,7 +158,8 @@ def login():
          # If user exists in user table in out database
         if user:
             user_dict = user.to_dict()
-            user_dict['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], user_dict['profile_pic'])
+            if user_dict['profile_pic']:
+                user_dict['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], user_dict['profile_pic'])
             if email == "admin0@gmail.com":
                  user_dict["token"] = jwt.encode(
                     {"user_id": user_dict["id"],
@@ -273,7 +274,8 @@ def get_all_user(current_user):
     if users:
         users_dict = [user.to_dict() for user in users]
         for u_d in users_dict:
-            u_d['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], u_d['profile_pic'])
+            if u_d['profile_pic']:
+                u_d['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], u_d['profile_pic'])
         response = {
             "error": False,
             "message": "success",
@@ -304,7 +306,8 @@ def get_user(current_user):
     # Check if user exists
     if user:
         user_dict = user.to_dict()
-        user_dict['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], user_dict['profile_pic'])
+        if user_dict['profile_pic']:
+            user_dict['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], user_dict['profile_pic'])
         response = {
             "error": False,
             "message": "success",
@@ -632,7 +635,8 @@ def get_all_image_history(current_user):
     if image_histories:
         image_histories_list = [history.to_dict() for history in image_histories]
         for i_hl in image_histories_list:
-            i_hl['image'] = os.path.join(app.config['UPLOADED_IMAGE'], i_hl['image'])
+            if i_hl['image']:
+                i_hl['image'] = os.path.join(app.config['UPLOADED_IMAGE'], i_hl['image'])
         response = {
             "error": False,
             "message": "success",
