@@ -11,7 +11,8 @@ from .db import db
 
 # Change this to your secret key (it can be anything, it's for extra protection)
 SECRET_KEY = 'keyrahasiakey'
-PROFILE_FOLDER = 'static/profile_pic/'
+PROFILE_FOLDER = "static\\profile_pic\\"
+# PROFILE_FOLDER = 'static/profile_pic/'
 IMAGE_FOLDER = 'static/image_history/'
 
 ORG_DOMAINS = ['.edu', '.org']
