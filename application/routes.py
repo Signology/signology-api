@@ -2,6 +2,7 @@ from application import app
 # from flask import redirect, render_template, url_for, request,session
 from application.controller.upload_image import upload_image_controller
 from application.controller.predict import predict_controller
+from werkzeug.utils import secure_filename
 # import nltk
 # nltk.download('punkt')
 
