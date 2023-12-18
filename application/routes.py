@@ -133,6 +133,13 @@ def delete_image_bucket(image_path):
     blob = bucket.blob(image_bucket_path)
     if blob.exists():
         blob.delete()
+        
+def check_premium_status(user):
+    if isinstance(user, User):
+        if user.has_premium_expired():
+            if user.acc_type != 'free':
+                user.acc_type = 'free'
+                db.session.commit()
 
 @app.route('/')
 def index():
@@ -167,6 +174,7 @@ def login():
         
          # If user exists in user table in out database
         if user:
+            check_premium_status(user)
             user_dict = user.to_dict()
             # if user_dict['profile_pic']:
             #     user_dict['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], user_dict['profile_pic'])

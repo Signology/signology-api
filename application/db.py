@@ -34,6 +34,11 @@ class User(db.Model):
             "updated_at": self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
         }
     
+    def has_premium_expired(self):
+        if self.premium_date and self.premium_date < datetime.utcnow().date():
+            return True
+        return False
+    
 class History(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
