@@ -1,4 +1,5 @@
-from application import app
+from urllib.parse import urlparse
+from application import app, client, bucket
 # from flask import redirect, render_template, url_for, request,session
 from application.controller.upload_image import upload_image_controller
 from application.controller.predict import predict_controller
@@ -124,6 +125,15 @@ def delete_image(image_path):
     if os.path.exists(cropped_image_full_path):
         os.remove(cropped_image_full_path)
 
+def delete_image_bucket(image_path):
+    parsed_url = urlparse(image_path)
+    path_components = parsed_url.path.split('/')
+    image_bucket_path = '/'.join(path_components[2:])
+
+    blob = bucket.blob(image_bucket_path)
+    if blob.exists():
+        blob.delete()
+
 @app.route('/')
 def index():
     return 'Welcome to slangtrap-api!, with CI/CD FR THIS TIME'
@@ -158,8 +168,8 @@ def login():
          # If user exists in user table in out database
         if user:
             user_dict = user.to_dict()
-            if user_dict['profile_pic']:
-                user_dict['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], user_dict['profile_pic'])
+            # if user_dict['profile_pic']:
+            #     user_dict['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], user_dict['profile_pic'])
             if email == "admin0@gmail.com":
                  user_dict["token"] = jwt.encode(
                     {"user_id": user_dict["id"],
@@ -273,9 +283,9 @@ def get_all_user(current_user):
     # Check if user exists
     if users:
         users_dict = [user.to_dict() for user in users]
-        for u_d in users_dict:
-            if u_d['profile_pic']:
-                u_d['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], u_d['profile_pic'])
+        # for u_d in users_dict:
+        #     if u_d['profile_pic']:
+        #         u_d['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], u_d['profile_pic'])
         response = {
             "error": False,
             "message": "success",
@@ -306,8 +316,8 @@ def get_user(current_user):
     # Check if user exists
     if user:
         user_dict = user.to_dict()
-        if user_dict['profile_pic']:
-            user_dict['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], user_dict['profile_pic'])
+        # if user_dict['profile_pic']:
+        #     user_dict['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], user_dict['profile_pic'])
         response = {
             "error": False,
             "message": "success",
@@ -349,17 +359,18 @@ def edit_user(current_user):
         else:
             password = user.password
 
-        is_premium_str = request.form.get('is_premium')
-        is_premium = strtobool(is_premium_str) if is_premium_str is not None else user.is_premium
+        # is_premium_str = request.form.get('is_premium')
+        # is_premium = strtobool(is_premium_str) if is_premium_str is not None else user.is_premium
+        acc_type = request.form.get('acc_type') or user.acc_type
         
         premium_date = request.form.get('premium_date') or user.premium_date
         
         point = request.form.get('point') or user.point
 
         if 'profile_pic' in request.files:
-            save_path = app.config['PROFILE_FOLDER']
-            if not os.path.exists(save_path):
-                os.makedirs(save_path)
+            # save_path = app.config['PROFILE_FOLDER']
+            # if not os.path.exists(save_path):
+            #     os.makedirs(save_path)
             profile_pic = request.files['profile_pic']
 
             # Check if the uploaded file is within the size limit
@@ -372,19 +383,47 @@ def edit_user(current_user):
 
             profile_pic_filename = str(uuid.uuid4()) + '.' + profile_pic.filename.rsplit('.', 1)[1].lower()
 
-            # Delete previous profile picture if it exists
-            if user.profile_pic:
-                previous_profile_pic_path = os.path.join(app.config["PROFILE_FOLDER"], user.profile_pic)
-                if os.path.exists(previous_profile_pic_path):
-                    os.remove(previous_profile_pic_path)
+            blob_name = os.path.join(app.config["PROFILE_FOLDER"], profile_pic_filename)
+            temp_file_path = os.path.join(app.config["TEMP_FOLDER"], profile_pic_filename)  # Replace with your temporary path
+            profile_pic.save(temp_file_path)
 
-            profile_pic.save(os.path.join(app.config["PROFILE_FOLDER"], profile_pic_filename))
+            # bucket = client.bucket(app.config["BUCKET_NAME"])
+            blob = bucket.blob(blob_name)
+            blob.upload_from_filename(temp_file_path)
+
+            # Set the image to be publicly accessible (replace 'allUsers' with specific access if needed)
+            blob.make_public()
+
+            # Get the public URL of the uploaded image
+            public_url = blob.public_url
+            profile_pic_filename = public_url
+
+            os.remove(temp_file_path)
+
+            # previous_profile_pic_path = user.profile_pic.split('https://storage.googleapis.com/' + app.config["BUCKET_NAME"])
+            if user.profile_pic:
+                delete_image_bucket(user.profile_pic)
+                # parsed_url = urlparse(user.profile_pic)
+                # path_components = parsed_url.path.split('/')
+                # previous_profile_pic_path = '/'.join(path_components[2:])
+
+                # blob = bucket.blob(previous_profile_pic_path)
+                # blob.delete()
+
+            # Delete previous profile picture if it exists
+            # if user.profile_pic:
+            #     previous_profile_pic_path = os.path.join(app.config["PROFILE_FOLDER"], user.profile_pic)
+            #     if os.path.exists(previous_profile_pic_path):
+            #         os.remove(previous_profile_pic_path)
+
+            # profile_pic.save(os.path.join(app.config["PROFILE_FOLDER"], profile_pic_filename))
         else:
             profile_pic_filename = user.profile_pic
 
         user.username=username
         user.password=password
-        user.is_premium = bool(is_premium)
+        # user.is_premium = bool(is_premium)
+        user.acc_type=acc_type
         user.premium_date=premium_date
         user.point=point
         user.profile_pic=profile_pic_filename
@@ -448,7 +487,7 @@ def edit_user_point(current_user):
 @app.route('/user', methods=['DELETE'])
 @token_required
 def delete_user(current_user):
-    user_id = current_user['id']
+    user_id = current_user.get('id')
     user = User.query.get(user_id)
 
     # Check if user exists
@@ -459,10 +498,19 @@ def delete_user(current_user):
         for h_id in history_ids:
             delete_history(h_id)
 
-        if user.profile_pic:
-            previous_profile_pic_path = os.path.join(app.config["PROFILE_FOLDER"], user.profile_pic)
-            if os.path.exists(previous_profile_pic_path):
-                os.remove(previous_profile_pic_path)
+        # bucket = client.bucket(app.config["BUCKET_NAME"])
+        delete_image_bucket(user.profile_pic)
+        # parsed_url = urlparse(user.profile_pic)
+        # path_components = parsed_url.path.split('/')
+        # previous_profile_pic_path = '/'.join(path_components[2:])
+
+        # blob = bucket.blob(previous_profile_pic_path)
+        # blob.delete()
+
+        # if user.profile_pic:
+        #     previous_profile_pic_path = os.path.join(app.config["PROFILE_FOLDER"], user.profile_pic)
+        #     if os.path.exists(previous_profile_pic_path):
+        #         os.remove(previous_profile_pic_path)
 
         db.session.delete(user)  # Delete the user
         db.session.commit()
@@ -514,6 +562,35 @@ def get_all_history(current_user):
         json_response = jsonify(response)
         json_response.status_code = 404
         return json_response
+    
+# http://localhost:5000/history
+@app.route('/user/history', methods=['GET'])
+@token_required
+def get_user_history(current_user):
+    # We need all the history info for the history so we can display it on the profile page
+    histories = History.query.filter_by(user_id=current_user.get('id')).all()
+
+    # Check if history exists
+    if histories:
+        histories_dict = [history.to_dict() for history in histories]
+        response = {
+            "error": False,
+            "message": "success",
+            "history ": histories_dict
+        }
+        # Show the profile page with history info
+        json_response = jsonify(response)
+        json_response.status_code = 200
+        return json_response
+    else:
+        # Handle case when history doesn't exist for the given ID
+        response = {
+            "error": True,
+            "message": "history not found",
+        }
+        json_response = jsonify(response)
+        json_response.status_code = 404
+        return json_response
 
 # http://localhost:5000/history
 @app.route('/history', methods=['POST'])
@@ -531,10 +608,10 @@ def post_history(current_user):
         db.session.add(new_history)
         db.session.commit()
 
-        # If there are more than 6 records, delete the oldest ones
+        # If there are more than 8 records, delete the oldest ones
         user_history = History.query.filter_by(user_id=user_id).order_by(History.created_at.asc()).all()
-        if len(user_history) > 6:
-            oldest_history = user_history[:len(user_history) - 6]
+        if len(user_history) > 8:
+            oldest_history = user_history[:len(user_history) - 8]
             for h in oldest_history:
                 delete_history(h.id)
 
@@ -634,9 +711,39 @@ def get_all_image_history(current_user):
     image_histories = ImageHistory.query.all()
     if image_histories:
         image_histories_list = [history.to_dict() for history in image_histories]
-        for i_hl in image_histories_list:
-            if i_hl['image']:
-                i_hl['image'] = os.path.join(app.config['UPLOADED_IMAGE'], i_hl['image'])
+        # for i_hl in image_histories_list:
+        #     if i_hl['image']:
+        #         i_hl['image'] = os.path.join(app.config['UPLOADED_IMAGE'], i_hl['image'])
+        response = {
+            "error": False,
+            "message": "success",
+            "image_histories": image_histories_list
+        }
+        # Show the profile page with image_history info
+        json_response = jsonify(response)
+        json_response.status_code = 200
+        return json_response
+    else:
+        # Handle case when image_history doesn't exist for the given ID
+        response = {
+            "error": True,
+            "message": "image_histories not found",
+        }
+        json_response = jsonify(response)
+        json_response.status_code = 404
+        return json_response
+    
+# http://localhost:5000/history
+@app.route('/history/<int:history_id>/image', methods=['GET'])
+@token_required
+def get_history_image(current_user,history_id):
+    # Check if image_history exists
+    image_histories = ImageHistory.query.filter_by(history_id=history_id).all()
+    if image_histories:
+        image_histories_list = [history.to_dict() for history in image_histories]
+        # for i_hl in image_histories_list:
+        #     if i_hl['image']:
+        #         i_hl['image'] = os.path.join(app.config['UPLOADED_IMAGE'], i_hl['image'])
         response = {
             "error": False,
             "message": "success",
@@ -679,15 +786,47 @@ def post_image_history(current_user):
         filename = secure_filename(image.filename)
         extension = filename.split(".")[-1]
 
+        # bucket = client.bucket(app.config["BUCKET_NAME"])
+
+        # blobs = bucket.list_blobs(prefix=app.config['UPLOADED_IMAGE_BUCKET'])
+        # file_count = sum(1 for _ in blobs)
+        # file_count=file_count-1
+
+        # # save_path = os.path.join(app.config['UPLOADED_IMAGE'], str(history_id))
+        # if not os.path.exists(save_path):
+        #     os.makedirs(save_path)
+
+        # new_filename = str(file_count) + f".{extension}"
+
+        # image.save(os.path.join(save_path, new_filename))
+
+        # image_filename = os.path.join(str(history_id), new_filename)
+
+        # save in application
         save_path = os.path.join(app.config['UPLOADED_IMAGE'], str(history_id))
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 
         new_filename = str(len(os.listdir(save_path))) + f".{extension}"
+        local_path = os.path.join(save_path, new_filename)
+        image.save(local_path)       # store image in 
 
-        image.save(os.path.join(save_path, new_filename))
+        # save in bucket
+        save_path = os.path.join(app.config['UPLOADED_IMAGE_BUCKET'], str(history_id))
+        blob_name = save_path + '/' + new_filename
+        # temp_file_path = os.path.join(app.config["TEMP_FOLDER"], new_filename)  # Replace with your temporary path
+        # image.save(temp_file_path)
+        blob = bucket.blob(blob_name)
+        blob.upload_from_filename(local_path)
 
-        image_filename = os.path.join(str(history_id), new_filename)
+        # Set the image to be publicly accessible (replace 'allUsers' with specific access if needed)
+        blob.make_public()
+
+        # Get the public URL of the uploaded image
+        public_url = blob.public_url
+        image_filename = public_url
+
+        # os.remove(temp_file_path)
 
         new_image_history = ImageHistory(history_id=history_id, image=image_filename)
         db.session.add(new_image_history)
@@ -721,7 +860,8 @@ def delete_image_history(current_user,id):
     image_history = ImageHistory.query.filter_by(id=id).first()
     if image_history:
         image_path = image_history.image
-        delete_image(image_path)
+        delete_image_bucket(image_path)
+        delete_image(image_path.split("raw/")[1])
         db.session.delete(image_history)
         db.session.commit()
 
@@ -744,9 +884,9 @@ def delete_image_history(current_user,id):
         return json_response
 
 # history user
-@app.route('/user/history', methods=['GET'])
+@app.route('/user/history/image', methods=['GET'])
 @token_required
-def get_user_history(current_user):
+def get_user_history_image(current_user):
     user_id = current_user.get('id')
     # We need all the user info for the user so we can display it on the profile page
     histories = (

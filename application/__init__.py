@@ -5,6 +5,8 @@ from flask_cors import CORS
 
 from datetime import datetime, timedelta
 
+from google.cloud import storage
+
 from sqlalchemy import create_engine
 
 from .db import db
@@ -12,6 +14,9 @@ from .db import db
 # Change this to your secret key (it can be anything, it's for extra protection)
 SECRET_KEY = 'keyrahasiakey'
 PROFILE_FOLDER = "static/profile_pic/"
+UPLOADED_IMAGE_BUCKET = "static/uploaded_image/raw/"
+# CROPED_IMAGE = "static/uploaded_image/croped/"
+BUCKET_NAME = "slangtrap-capstone-406914-bucket"
 # PROFILE_FOLDER = 'static/profile_pic/'
 IMAGE_FOLDER = 'static/image_history/'
 
@@ -39,7 +44,7 @@ engine = create_engine(SQLALCHEMY_DATABASE_URI)
 # # Session = sessionmaker(bind=engine)
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root@localhost/db_capstone3'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root@localhost/db_capstone4'
 
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -61,9 +66,17 @@ app.config.update(
     CROPED_IMAGE = os.path.join(dir_path, "static/uploaded_image/croped/"),
     MODEL_PATH = os.path.join(dir_path,'model/slang_app.h5'),
     DATASET_AUTOCORRECT = os.path.join(dir_path,"controller/autocorrect_dataset/talpco_id.txt"),
-    PROFILE_FOLDER = os.path.join(dir_path,PROFILE_FOLDER)
+    # PROFILE_FOLDER = os.path.join(dir_path,PROFILE_FOLDER),
+    PROFILE_FOLDER = PROFILE_FOLDER,
+    UPLOADED_IMAGE_BUCKET = UPLOADED_IMAGE_BUCKET,
+    # CROPED_IMAGE = CROPED_IMAGE,
+    BUCKET_NAME = BUCKET_NAME,
+    TEMP_FOLDER = os.path.join(dir_path,'temp/'),
 )
 
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.join(dir_path, "credential.json")
+client = storage.Client()
+bucket = client.bucket(app.config["BUCKET_NAME"])
 
 db.init_app(app)
 
