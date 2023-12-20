@@ -143,7 +143,7 @@ def check_premium_status(user):
 
 @app.route('/')
 def index():
-    return 'Welcome to slangtrap-api!, with CI/CD FR THIS TIME'
+    return 'Welcome to signology-api!'
 
 @app.route('/logout', methods=['POST'])
 def logout():
