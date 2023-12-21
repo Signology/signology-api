@@ -45,17 +45,14 @@ def edits2(word):
 
 
 def autocorrect_text(sentence):
-    words = sentence.split()
+    words = sentence.lower()
+    words = words.split()
     corrected_words =[]
     pos_word = postagger.get_pos_tag(sentence)
     for i, word in enumerate(words):
-        if pos_word[i][1] != "NNP":
-            corrected_words.append(correction(word))
-        else:
-            corrected_words.append(word)
+        corrected_words.append(correction(word))
             
     result_corrected_words = " ".join(corrected_words)
     
-    return result_corrected_words
+    return result_corrected_words.upper()
     
-
