@@ -1,7 +1,7 @@
-The source code and documentation repo of Signology API gateway for Bangkit Capstone Project, built using Flask and SQLAlchemy along with powerful sign language machine learning models deployed with CI/CD pipeline.
-
 To Replicate and test the API you need to configure the database first.
-![image](https://github.com/Signology/signology-api/assets/93120790/632e0b81-d24a-4b65-bb07-84aa815fdde6)
+
+![image](https://github.com/Signology/signology-api/assets/93120790/635df4e8-c57e-4220-a93a-b9816258825f)
+
 
 For more detailed API documentation, check [here](https://signology-api-3su245brda-et.a.run.app/api/docs/).
 
