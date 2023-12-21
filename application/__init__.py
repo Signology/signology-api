@@ -33,10 +33,12 @@ DB_PASSWORD = 'fill out your database password'
 DB_NAME = 'fill out your database name'
 CLOUD_SQL_CONNECTION_NAME = 'fill out your database connection name'
 DB_PORT = 'fill out your database port'
+
 # If you are running through CloudSQL
 SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@34.128.82.108:{DB_PORT}/{DB_NAME}"
+
 # If you are running in local environment
-# SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?unix_socket=/cloudsql/{CLOUD_SQL_CONNECTION_NAME}"
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root@localhost/{Database_Name}'
 
 # Create the engine
 engine = create_engine(SQLALCHEMY_DATABASE_URI)
