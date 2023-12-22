@@ -216,7 +216,7 @@ def login():
     json_response.status_code = 401
     return json_response
 
-# http://localhost:5000/register
+# user register
 @app.route('/register', methods=['POST'])
 def register():
     # Output message if something goes wrong...
@@ -228,9 +228,11 @@ def register():
         password = request.form['password']
         email = request.form['email']
         point = 500
+        acc_type = 'Free'
 
         if any(email.endswith(domain) for domain in app.config['ORG_DOMAINS']):
             point = 1500  # Email is from an organization
+            acc_type = 'Student'
 
         # Check if user exists using MySQL
         user = User.query.filter_by(email=email).first()
@@ -255,6 +257,7 @@ def register():
                 password=password,
                 email=email,
                 point=point,
+                acc_type=acc_type
             )
 
             # Add the new user to the session
@@ -291,9 +294,6 @@ def get_all_user(current_user):
     # Check if user exists
     if users:
         users_dict = [user.to_dict() for user in users]
-        # for u_d in users_dict:
-        #     if u_d['profile_pic']:
-        #         u_d['profile_pic'] = os.path.join(app.config['PROFILE_FOLDER'], u_d['profile_pic'])
         response = {
             "error": False,
             "message": "success",
@@ -345,8 +345,8 @@ def get_user(current_user):
         json_response.status_code = 404
         return json_response
 
-# http://localhost:5000/edituser
-@app.route('/user', methods=['PUT'])
+# http://localhost:5000/user
+@app.route('/user', methods=['PATCH'])
 @token_required
 def edit_user(current_user):
     # Output message if something goes wrong...
@@ -367,8 +367,6 @@ def edit_user(current_user):
         else:
             password = user.password
 
-        # is_premium_str = request.form.get('is_premium')
-        # is_premium = strtobool(is_premium_str) if is_premium_str is not None else user.is_premium
         acc_type = request.form.get('acc_type') or user.acc_type
         
         premium_date = request.form.get('premium_date') or user.premium_date
@@ -376,9 +374,7 @@ def edit_user(current_user):
         point = request.form.get('point') or user.point
 
         if 'profile_pic' in request.files:
-            # save_path = app.config['PROFILE_FOLDER']
-            # if not os.path.exists(save_path):
-            #     os.makedirs(save_path)
+
             profile_pic = request.files['profile_pic']
 
             # Check if the uploaded file is within the size limit
@@ -395,7 +391,6 @@ def edit_user(current_user):
             temp_file_path = os.path.join(app.config["TEMP_FOLDER"], profile_pic_filename)  # Replace with your temporary path
             profile_pic.save(temp_file_path)
 
-            # bucket = client.bucket(app.config["BUCKET_NAME"])
             blob = bucket.blob(blob_name)
             blob.upload_from_filename(temp_file_path)
 
@@ -408,23 +403,8 @@ def edit_user(current_user):
 
             os.remove(temp_file_path)
 
-            # previous_profile_pic_path = user.profile_pic.split('https://storage.googleapis.com/' + app.config["BUCKET_NAME"])
             if user.profile_pic:
                 delete_image_bucket(user.profile_pic)
-                # parsed_url = urlparse(user.profile_pic)
-                # path_components = parsed_url.path.split('/')
-                # previous_profile_pic_path = '/'.join(path_components[2:])
-
-                # blob = bucket.blob(previous_profile_pic_path)
-                # blob.delete()
-
-            # Delete previous profile picture if it exists
-            # if user.profile_pic:
-            #     previous_profile_pic_path = os.path.join(app.config["PROFILE_FOLDER"], user.profile_pic)
-            #     if os.path.exists(previous_profile_pic_path):
-            #         os.remove(previous_profile_pic_path)
-
-            # profile_pic.save(os.path.join(app.config["PROFILE_FOLDER"], profile_pic_filename))
         else:
             profile_pic_filename = user.profile_pic
 
@@ -491,6 +471,62 @@ def edit_user_point(current_user):
     json_response.status_code = 409
     return json_response
 
+# user register
+@app.route('/user/password', methods=['PATCH'])
+@token_required
+def user_password(current_user):
+    # Output message if something goes wrong...
+    msg = ''
+    # Check if "password" POST requests exist (user submitted form)
+    if 'password' in request.form and 'prev_password' in request.form:
+        # Create variables for easy access
+
+        password = request.form['password']
+        prev_password = request.form['prev_password']
+        
+        # Hash the password
+        hash = password + app.config["SECRET_KEY"]
+        hash = hashlib.sha1(hash.encode())
+        password = hash.hexdigest()
+        
+        hash2 = prev_password + app.config["SECRET_KEY"]
+        hash2 = hashlib.sha1(hash2.encode())
+        prev_password = hash2.hexdigest()
+        
+        
+        user = User.query.filter_by(id=current_user.get('id')).first()
+        if user:
+            real_pass = user.password
+            if prev_password == real_pass:
+                user.password = password
+                
+                # Add the new user to the session
+                db.session.commit()
+
+                msg = 'You have successfully changed password!'
+                response = {
+                    "error": False,
+                    "message": msg,
+                }
+                json_response = jsonify(response)
+                json_response.status_code = 200
+                return json_response
+            else:
+                msg = 'incorrect previous password ' + prev_password + ' ' + user.password
+        else:
+            msg = 'user not found'
+    else:
+        # Form is empty... (no POST data)
+        msg = 'Please fill out the form!'
+    # Show registration form with message (if any)
+    response = {
+                "error": True,
+                "message": msg,
+    }
+    json_response = jsonify(response)
+    json_response.status_code = 409
+    return json_response
+
 # http://localhost:5000/user/
 @app.route('/user', methods=['DELETE'])
 @token_required
@@ -506,19 +542,8 @@ def delete_user(current_user):
         for h_id in history_ids:
             delete_history(h_id)
 
-        # bucket = client.bucket(app.config["BUCKET_NAME"])
         delete_image_bucket(user.profile_pic)
-        # parsed_url = urlparse(user.profile_pic)
-        # path_components = parsed_url.path.split('/')
-        # previous_profile_pic_path = '/'.join(path_components[2:])
 
-        # blob = bucket.blob(previous_profile_pic_path)
-        # blob.delete()
-
-        # if user.profile_pic:
-        #     previous_profile_pic_path = os.path.join(app.config["PROFILE_FOLDER"], user.profile_pic)
-        #     if os.path.exists(previous_profile_pic_path):
-        #         os.remove(previous_profile_pic_path)
 
         db.session.delete(user)  # Delete the user
         db.session.commit()
@@ -643,8 +668,7 @@ def post_history(current_user):
     json_response.status_code = 409
     return json_response
 
-# http://localhost:5000/edithistory
-@app.route('/history/<int:id>/<word>', methods=['PUT'])
+
 @token_required
 def edit_history_param(current_user,id,word):
     # Output message if something goes wrong...
@@ -719,9 +743,7 @@ def get_all_image_history(current_user):
     image_histories = ImageHistory.query.all()
     if image_histories:
         image_histories_list = [history.to_dict() for history in image_histories]
-        # for i_hl in image_histories_list:
-        #     if i_hl['image']:
-        #         i_hl['image'] = os.path.join(app.config['UPLOADED_IMAGE'], i_hl['image'])
+
         response = {
             "error": False,
             "message": "success",
@@ -749,9 +771,7 @@ def get_history_image(current_user,history_id):
     image_histories = ImageHistory.query.filter_by(history_id=history_id).all()
     if image_histories:
         image_histories_list = [history.to_dict() for history in image_histories]
-        # for i_hl in image_histories_list:
-        #     if i_hl['image']:
-        #         i_hl['image'] = os.path.join(app.config['UPLOADED_IMAGE'], i_hl['image'])
+
         response = {
             "error": False,
             "message": "success",
@@ -788,27 +808,9 @@ def post_image_history(current_user):
             }
             return jsonify(response), 413  # 413: Payload Too Large
         
-        # image_filename = str(uuid.uuid4()) + '.' + image.filename.rsplit('.', 1)[1].lower()
-
-        # image.save(os.path.join(app.config['IMAGE_FOLDER'], image_filename))
         filename = secure_filename(image.filename)
         extension = filename.split(".")[-1]
 
-        # bucket = client.bucket(app.config["BUCKET_NAME"])
-
-        # blobs = bucket.list_blobs(prefix=app.config['UPLOADED_IMAGE_BUCKET'])
-        # file_count = sum(1 for _ in blobs)
-        # file_count=file_count-1
-
-        # # save_path = os.path.join(app.config['UPLOADED_IMAGE'], str(history_id))
-        # if not os.path.exists(save_path):
-        #     os.makedirs(save_path)
-
-        # new_filename = str(file_count) + f".{extension}"
-
-        # image.save(os.path.join(save_path, new_filename))
-
-        # image_filename = os.path.join(str(history_id), new_filename)
 
         # save in application
         save_path = os.path.join(app.config['UPLOADED_IMAGE'], str(history_id))
@@ -822,8 +824,7 @@ def post_image_history(current_user):
         # save in bucket
         save_path = os.path.join(app.config['UPLOADED_IMAGE_BUCKET'], str(history_id))
         blob_name = save_path + '/' + new_filename
-        # temp_file_path = os.path.join(app.config["TEMP_FOLDER"], new_filename)  # Replace with your temporary path
-        # image.save(temp_file_path)
+
         blob = bucket.blob(blob_name)
         blob.upload_from_filename(local_path)
 
@@ -924,22 +925,14 @@ def get_user_history_image(current_user):
     return json_response
 
 
-
-@app.route('/upload_image/<int:history_id>', methods=['POST'])
-@token_required
-def upload_image_route(current_user,history_id):
-    # post_image_history(history_id)
-    
-    return upload_image_controller(str(history_id))
     
 @app.route('/predict/<int:history_id>', methods=['POST'])
 @token_required
 def predict_route(current_user,history_id):
     output = predict_controller(str(history_id))
-    edit_history_param(history_id, output["word_cnn"])  # Assuming 'edit_history' is the function to edit history
+    edit_history_param(history_id, output["word_cnn"]) 
     return jsonify(output)
-    
-    # return  predict_controller(str(history_id))
+
 
 
     
